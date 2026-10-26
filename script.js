@@ -1,297 +1,568 @@
-// Year (safe)
+
+"use strict";
+
+// ==========================================
+// SOCIAL MEDIA PORTFOLIO — COMPLETE SCRIPT
+// ==========================================
+
+// CURRENT YEAR
 const yearEl = document.getElementById("year");
-if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+if (yearEl) {
+  yearEl.textContent = String(new Date().getFullYear());
+}
 
-// Mobile nav
+// ==========================================
+// MOBILE NAVIGATION
+// ==========================================
 const navBtn = document.getElementById("navBtn");
 const nav = document.getElementById("nav");
+
 if (navBtn && nav) {
   navBtn.addEventListener("click", () => {
-    const open = nav.classList.toggle("open");
-    navBtn.setAttribute("aria-expanded", String(open));
+    const isOpen = nav.classList.toggle("open");
+    navBtn.setAttribute("aria-expanded", String(isOpen));
   });
 
-  nav.querySelectorAll("a").forEach(a => {
-    a.addEventListener("click", () => {
+  nav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
       nav.classList.remove("open");
       navBtn.setAttribute("aria-expanded", "false");
     });
   });
 }
 
-
-// Portfolio filtering
+// ==========================================
+// PORTFOLIO FILTERS
+// ==========================================
 const filterBtns = document.querySelectorAll(".pill-filter");
 const cards = document.querySelectorAll(".work-card");
 
-filterBtns.forEach(btn => {
+filterBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
-    filterBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
+    filterBtns.forEach((button) => {
+      const active = button === btn;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
 
-    const f = btn.dataset.filter;
-    cards.forEach(card => {
-      const show = (f === "all") || (card.dataset.cat === f);
-      card.style.display = show ? "" : "none";
+    const selected = btn.dataset.filter || "all";
+
+    cards.forEach((card) => {
+      const categories = (card.dataset.cat || "")
+        .split(/\s+/)
+        .filter(Boolean);
+
+      card.hidden =
+        selected !== "all" && !categories.includes(selected);
     });
   });
 });
 
-
-// ✅ Contact form (Formspree)
+// ==========================================
+// CONTACT FORM — FORMSPREE
+// ==========================================
 const contactForm = document.getElementById("contactForm");
-const formStatus = document.getElementById("formStatus"); // add <p id="formStatus"></p> in form
+const formStatus = document.getElementById("formStatus");
 
 if (contactForm) {
-  contactForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  contactForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const submitButton = contactForm.querySelector(
+      'button[type="submit"], input[type="submit"]'
+    );
+
+    if (submitButton) submitButton.disabled = true;
 
     if (formStatus) {
-      formStatus.textContent = "Sending...";
+      formStatus.textContent = "Sending your message...";
       formStatus.style.color = "#9aa3c7";
     }
 
-    const data = new FormData(contactForm);
-
     try {
-      const res = await fetch(contactForm.action, {
+      const response = await fetch(contactForm.action, {
         method: "POST",
-        body: data,
-        headers: { Accept: "application/json" }
+        body: new FormData(contactForm),
+        headers: {
+          Accept: "application/json",
+        },
       });
 
-      if (res.ok) {
-        if (formStatus) {
-          formStatus.textContent = "✅ Message sent successfully!";
-          formStatus.style.color = "#73ffb3";
-        }
-        contactForm.reset();
-      } else {
-        if (formStatus) {
-          formStatus.textContent = "❌ Something went wrong. Please try again.";
-          formStatus.style.color = "#ff4f9a";
-        }
+      if (!response.ok) {
+        throw new Error("Form submission failed");
       }
-    } catch (err) {
+
       if (formStatus) {
-        formStatus.textContent = "❌ Network error. Please try again later.";
+        formStatus.textContent =
+          "Message sent successfully! Thank you.";
+        formStatus.style.color = "#1e9a64";
+      }
+
+      contactForm.reset();
+    } catch (error) {
+      console.error("Contact form error:", error);
+
+      if (formStatus) {
+        formStatus.textContent =
+          "Unable to send your message. Please try again.";
         formStatus.style.color = "#ff4f9a";
       }
+    } finally {
+      if (submitButton) submitButton.disabled = false;
     }
   });
 }
 
-
-// Services "Learn more" modal
+// ==========================================
+// SERVICES MODAL
+// ==========================================
 const modal = document.getElementById("modal");
 const modalTitle = document.getElementById("modalTitle");
 const modalBody = document.getElementById("modalBody");
 
 const svcCopy = {
-  Strategy: "Includes audit, competitor scan, content pillars, monthly calendar, and KPI planning.",
-  Management: "Includes scheduling, weekly posting, community replies, and optimisation based on analytics.",
-  Ads: "Includes campaign setup, A/B testing creatives, audience targeting, and performance reporting.",
-  Content: "Includes post design, reels editing direction, caption writing, and on-brand template system.",
-  Engagement: "Includes community building, DM/comment workflows, and a response tone/FAQ playbook.",
-  Analytics: "Includes weekly/monthly reporting, insights, and recommendations to improve results."
+  Strategy:
+    "Includes audit, competitor scan, content pillars, monthly calendar, and KPI planning.",
+
+  Management:
+    "Includes scheduling, weekly posting, community replies, and optimisation based on analytics.",
+
+  Ads:
+    "Includes campaign setup, A/B testing creatives, audience targeting, and performance reporting.",
+
+  Content:
+    "Includes post design, reels editing direction, caption writing, and on-brand template system.",
+
+  Engagement:
+    "Includes community building, DM/comment workflows, and a response tone/FAQ playbook.",
+
+  Analytics:
+    "Includes weekly/monthly reporting, insights, and recommendations to improve results.",
 };
 
-function openModal(title, body) {
-  if (!modal || !modalTitle || !modalBody) return;
-  modalTitle.textContent = title;
-  modalBody.textContent = body;
-  modal.classList.add("open");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-}
-
-function closeModal() {
-  if (!modal) return;
-  modal.classList.remove("open");
-  modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-}
-
-document.querySelectorAll(".svc-link").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const key = btn.dataset.svc;
-    openModal(key, svcCopy[key] || "Details coming soon.");
-  });
-});
-document.querySelectorAll("[data-close]").forEach(el => el.addEventListener("click", closeModal));
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeModal();
-});
-
-
-// ✅ Featured Works Lightbox: switch projects + scrollable MEDIA (images/videos)
+// ==========================================
+// FEATURED WORKS LIGHTBOX ELEMENTS
+// ==========================================
 const lightbox = document.getElementById("lightbox");
 const lbStage = document.getElementById("lbStage");
+const lbStrip = document.getElementById("lbStrip");
+
 const lightboxTitle = document.getElementById("lightboxTitle");
 const lightboxMeta = document.getElementById("lightboxMeta");
 const lightboxDesc = document.getElementById("lightboxDesc");
+const lightboxTag = document.getElementById("lightboxTag");
+
 const lightboxClose = document.getElementById("lightboxClose");
 const lightboxBg = document.getElementById("lightboxBg");
-const lightboxTag = document.getElementById("lightboxTag");
 
 const lbPrevProject = document.getElementById("lbPrevProject");
 const lbNextProject = document.getElementById("lbNextProject");
-const lbStrip = document.getElementById("lbStrip");
 
 let projectList = [];
 let projectIndex = 0;
 let mediaIndex = 0;
 
-function getVisibleCards() {
-  return Array.from(document.querySelectorAll(".work-card"))
-    .filter(c => c.style.display !== "none");
+// Prevent background scrolling while a popup is open
+function updateBodyScroll() {
+  const modalOpen = modal?.classList.contains("open");
+  const lightboxOpen = lightbox?.classList.contains("open");
+
+  document.body.style.overflow =
+    modalOpen || lightboxOpen ? "hidden" : "";
 }
 
+// ==========================================
+// SERVICES MODAL FUNCTIONS
+// ==========================================
+function openModal(title, body) {
+  if (!modal || !modalTitle || !modalBody) return;
+
+  modalTitle.textContent = title;
+  modalBody.textContent = body;
+
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+
+  updateBodyScroll();
+}
+
+function closeModal() {
+  if (!modal) return;
+
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+
+  updateBodyScroll();
+}
+
+document.querySelectorAll(".svc-link").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.svc;
+
+    openModal(
+      key || "Service",
+      svcCopy[key] || "More information coming soon."
+    );
+  });
+});
+
+document.querySelectorAll("[data-close]").forEach((element) => {
+  element.addEventListener("click", closeModal);
+});
+
+// ==========================================
+// VIDEO DETECTION
+// ==========================================
 function isVideo(url) {
-  return /\.(mp4|webm|ogg)$/i.test(url);
+  return /\.(mp4|webm|ogg|mov)(?:[?#].*)?$/i.test(url);
 }
 
+// ==========================================
+// GET PROJECT MEDIA
+// ==========================================
 function parseMedia(card) {
-  const raw = (card.dataset.media || card.dataset.images || card.dataset.img || "").trim();
+  const raw = (
+    card.dataset.media ||
+    card.dataset.images ||
+    card.dataset.img ||
+    ""
+  ).trim();
+
   if (!raw) return [];
-  return raw.split("|").map(s => s.trim()).filter(Boolean);
+
+  return raw
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
+// ==========================================
+// GET VISIBLE PROJECT CARDS
+// ==========================================
+function getVisibleCards() {
+  return Array.from(cards).filter((card) => {
+    return !card.hidden && getComputedStyle(card).display !== "none";
+  });
+}
+
+// ==========================================
+// DISPLAY IMAGE OR VIDEO
+// ==========================================
 function renderStage(url) {
   if (!lbStage) return;
 
-  // stop previous video by clearing stage
-  lbStage.innerHTML = "";
-  lbStage.style.opacity = "0";
+  // Remove old media and stop previous video
+  lbStage.replaceChildren();
 
-  setTimeout(() => {
-    if (isVideo(url)) {
-      const v = document.createElement("video");
-      v.src = url;
-      v.controls = true;
-      v.playsInline = true;
-      v.preload = "metadata";
-      lbStage.appendChild(v);
-    } else {
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = "Featured work media";
-      img.loading = "lazy";
-      lbStage.appendChild(img);
-    }
-    lbStage.style.opacity = "1";
-  }, 120);
+  if (!url) return;
+
+  if (isVideo(url)) {
+    const video = document.createElement("video");
+
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.setAttribute("aria-label", "Project video preview");
+
+    lbStage.appendChild(video);
+  } else {
+    const image = document.createElement("img");
+
+    image.src = url;
+    image.alt = "Featured project media";
+    image.loading = "eager";
+
+    lbStage.appendChild(image);
+  }
 }
 
-function renderThumbs(list) {
+// ==========================================
+// MEDIA THUMBNAILS
+// ==========================================
+function renderThumbs(media) {
   if (!lbStrip) return;
 
-  lbStrip.innerHTML = "";
-  if (!list.length) return;
+  lbStrip.replaceChildren();
 
-  list.forEach((u, i) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "lb-thumb" + (i === mediaIndex ? " active" : "");
+  if (!media.length) return;
 
-    if (isVideo(u)) {
-      btn.innerHTML = `
-        <div style="position:relative;width:100%;height:100%;">
-          <div style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;
-                      font-weight:900;background:rgba(0,0,0,.35);">
-            ▶
-          </div>
-          <div style="width:100%;height:100%;background:#111;"></div>
-        </div>
-      `;
+  media.forEach((url, index) => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className =
+      "lb-thumb" + (index === mediaIndex ? " active" : "");
+
+    button.setAttribute(
+      "aria-label",
+      `View media ${index + 1} of ${media.length}`
+    );
+
+    if (isVideo(url)) {
+      const videoThumb = document.createElement("div");
+
+      videoThumb.style.width = "100%";
+      videoThumb.style.height = "100%";
+      videoThumb.style.display = "grid";
+      videoThumb.style.placeItems = "center";
+      videoThumb.style.background = "#111827";
+      videoThumb.style.color = "#fff";
+      videoThumb.style.fontSize = "24px";
+      videoThumb.textContent = "▶";
+
+      button.appendChild(videoThumb);
     } else {
-      btn.innerHTML = `<img src="${u}" alt="Preview ${i+1}" loading="lazy">`;
+      const image = document.createElement("img");
+
+      image.src = url;
+      image.alt = `Project thumbnail ${index + 1}`;
+      image.loading = "lazy";
+
+      button.appendChild(image);
     }
 
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      mediaIndex = i;
-      renderStage(list[mediaIndex]);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
 
-      lbStrip.querySelectorAll(".lb-thumb").forEach(t => t.classList.remove("active"));
-      btn.classList.add("active");
+      mediaIndex = index;
+      renderStage(media[mediaIndex]);
 
-      btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      lbStrip.querySelectorAll(".lb-thumb").forEach((thumb) => {
+        thumb.classList.remove("active");
+      });
+
+      button.classList.add("active");
+
+      button.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     });
 
-    lbStrip.appendChild(btn);
+    lbStrip.appendChild(button);
   });
-
-  lbStrip.querySelector(".lb-thumb.active")?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
 }
 
+// ==========================================
+// PROJECT DETAILS
+// ==========================================
 function renderProject(card) {
   if (!card) return;
 
-  const title = card.dataset.title || card.querySelector(".work-title")?.textContent || "Featured Work";
-  const meta = card.dataset.meta || card.querySelector(".work-meta")?.textContent || "";
-  const desc = card.dataset.desc || "";
+  const title =
+    card.dataset.title ||
+    card.querySelector(".work-title")?.textContent ||
+    "Featured Work";
 
-  const media = parseMedia(card);
-  mediaIndex = 0;
+  const meta =
+    card.dataset.meta ||
+    card.querySelector(".work-meta")?.textContent ||
+    "";
+
+  const description = card.dataset.desc || "";
 
   if (lightboxTitle) lightboxTitle.textContent = title;
   if (lightboxMeta) lightboxMeta.textContent = meta;
-  if (lightboxDesc) lightboxDesc.textContent = desc;
+  if (lightboxDesc) lightboxDesc.textContent = description;
   if (lightboxTag) lightboxTag.textContent = meta || "Preview";
+
+  const media = parseMedia(card);
+
+  mediaIndex = 0;
 
   if (media.length) {
     renderStage(media[0]);
     renderThumbs(media);
   } else {
-    if (lbStage) lbStage.innerHTML = "";
-    if (lbStrip) lbStrip.innerHTML = "";
+    lbStage?.replaceChildren();
+    lbStrip?.replaceChildren();
+  }
+
+  // Optional external project link
+  const projectLink = document.getElementById("lightboxCta");
+
+  if (projectLink) {
+    const url = card.dataset.link;
+
+    if (url) {
+      projectLink.href = url;
+      projectLink.target = "_blank";
+      projectLink.rel = "noopener noreferrer";
+      projectLink.textContent = "Visit Project ↗";
+    } else {
+      projectLink.href = "#contact";
+      projectLink.removeAttribute("target");
+      projectLink.removeAttribute("rel");
+      projectLink.textContent = "Get in Touch →";
+    }
   }
 }
 
+// ==========================================
+// OPEN PROJECT LIGHTBOX
+// ==========================================
 function openLightbox(card) {
   if (!lightbox) return;
 
-  projectList = getVisibleCards();
-  projectIndex = Math.max(0, projectList.indexOf(card));
+  projectList = getVisibleCards().filter(
+    (item) => item.dataset.direct !== "true"
+  );
+
+  projectIndex = projectList.indexOf(card);
+
+  if (projectIndex < 0) return;
+
   renderProject(projectList[projectIndex]);
 
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+
+  updateBodyScroll();
 }
 
+// ==========================================
+// CLOSE PROJECT LIGHTBOX
+// ==========================================
 function closeLightbox() {
   if (!lightbox) return;
 
   lightbox.classList.remove("open");
   lightbox.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-  if (lbStage) lbStage.innerHTML = ""; // stops video
-  if (lbStrip) lbStrip.innerHTML = "";
+
+  // Stop video playback
+  lbStage?.replaceChildren();
+  lbStrip?.replaceChildren();
+
+  updateBodyScroll();
 }
 
-function switchProject(delta) {
+// ==========================================
+// NEXT / PREVIOUS PROJECT
+// ==========================================
+function switchProject(direction) {
   if (!projectList.length) return;
-  projectIndex = (projectIndex + delta + projectList.length) % projectList.length;
+
+  projectIndex =
+    (projectIndex + direction + projectList.length) %
+    projectList.length;
+
   renderProject(projectList[projectIndex]);
 }
 
-document.querySelectorAll(".work-card").forEach(card => {
-  card.addEventListener("click", () => openLightbox(card));
+// ==========================================
+// PROJECT CARD CLICK BEHAVIOR
+// ==========================================
+// JSM, WWIB, JazzRock, SuperDawgs and
+// Eprecision open their media galleries.
+//
+// Lazy Loopin opens its live website directly.
+// ==========================================
+cards.forEach((card) => {
+  card.tabIndex = 0;
+  card.setAttribute("role", "button");
+
+  function activateCard() {
+    if (card.dataset.direct === "true" && card.dataset.link) {
+      window.open(
+        card.dataset.link,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+
+    openLightbox(card);
+  }
+
+  card.addEventListener("click", activateCard);
+
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activateCard();
+    }
+  });
 });
 
-lbPrevProject?.addEventListener("click", (e) => { e.stopPropagation(); switchProject(-1); });
-lbNextProject?.addEventListener("click", (e) => { e.stopPropagation(); switchProject(1); });
+// ==========================================
+// PROJECT NAVIGATION BUTTONS
+// ==========================================
+lbPrevProject?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  switchProject(-1);
+});
 
+lbNextProject?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  switchProject(1);
+});
+
+// ==========================================
+// CLOSE LIGHTBOX
+// ==========================================
 lightboxClose?.addEventListener("click", closeLightbox);
 lightboxBg?.addEventListener("click", closeLightbox);
 
-document.addEventListener("keydown", (e) => {
+// ==========================================
+// OPTIONAL LIGHTBOX CTA
+// ==========================================
+const lightboxCta = document.getElementById("lightboxCta");
+
+lightboxCta?.addEventListener("click", () => {
+  if (lightboxCta.getAttribute("href") === "#contact") {
+    closeLightbox();
+  }
+});
+
+// ==========================================
+// KEYBOARD CONTROLS
+// ==========================================
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeModal();
+    closeLightbox();
+    return;
+  }
+
   if (!lightbox?.classList.contains("open")) return;
 
-  if (e.key === "Escape") closeLightbox();
-  if (e.key === "ArrowLeft") switchProject(-1);
-  if (e.key === "ArrowRight") switchProject(1);
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    switchProject(-1);
+  }
+
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    switchProject(1);
+  }
 });
+
+// ==========================================
+// OPTIONAL PROJECT COVER IMAGES
+// ==========================================
+document.querySelectorAll("[data-cover]").forEach((element) => {
+  const imageUrl = element.dataset.cover;
+
+  if (!imageUrl) return;
+
+  const image = new Image();
+
+  image.onload = () => {
+    element.style.backgroundImage =
+      `linear-gradient(135deg, ` +
+      `rgba(3,10,25,.45), ` +
+      `rgba(3,10,25,.1)), ` +
+      `url("${imageUrl}")`;
+
+    element.dataset.loaded = "true";
+  };
+
+  image.src = imageUrl;
+});
+
+// ==========================================
+// END OF SCRIPT
+// ==========================================
